@@ -1,5 +1,14 @@
 from fastapi import FastAPI
 from fastapi import Body
+from pydantic import BaseModel
+
+
+class WorkerSchema(BaseModel):
+    id: int
+    name: str
+    position: str
+    status: str
+
 
 workers_list = {
     "status": "success",
@@ -64,25 +73,18 @@ def workerByQuery(position: str):
     return filtered_workers
 
 @app.post("/workers")
-def createWorker(id:int = Body(), name:str = Body(), position:str = Body(), status:str = Body()):
-    new_worker = {
-        "id": id,
-        "name": name,
-        "position": position,
-        "status": status
-    }
-    workers_list["data"].append(new_worker)
+def createWorker(workerSchema: WorkerSchema):
+    workers_list["data"].append(workerSchema)
     return workers_list
 
 @app.put("/workers/{id}")
-def updateWorker(id: int, name:str = Body(), position:str = Body(), status:str = Body()):
+def updateWorker(id: int, workerSchema: WorkerSchema):
     for worker in workers_list["data"]:
         if worker["id"] == id:
-            worker["name"] = name
-            worker["position"] = position
-            worker["status"] = status
+            worker["name"] = workerSchema.name
+            worker["position"] = workerSchema.position
+            worker["status"] = workerSchema.status
             return worker
-    return {"status": "error", "message": "Worker not found"}
 
 @app.delete("/workers/{id}")
 def deleteWorker(id: int):
