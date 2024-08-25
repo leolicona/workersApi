@@ -1,14 +1,22 @@
 from fastapi import FastAPI
-from fastapi import Body
-from pydantic import BaseModel
-
+from pydantic import BaseModel, Field, Path, Query
+from fastapi.responses import JSONResponse
 
 class WorkerSchema(BaseModel):
     id: int
-    name: str
-    position: str
-    status: str
+    name: str = Field( min_length=3, max_length=20)
+    position: str = Field( min_length=3, max_length=30) 
+    status: str = Field( min_length=6, max_length=8)
 
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "id": 1,
+                "name": "Alice Johnson",
+                "position": "Software Engineer",
+                "status": "active"
+            }
+        }
 
 workers_list = {
     "status": "success",
@@ -58,24 +66,24 @@ def workers():
 
 
 @app.get("/workers/{id}")
-def worker(id: int):
+def worker(id: int = Path(ge=1, le=200)):
     for worker in workers_list["data"]:
         if worker["id"] == id:
-            return worker
-    return {"status": "error", "message": "Worker not found"}
+            return JSONResponse(content=worker)
+    return JSONResponse(content={"status": "error", "message": "Worker not found"})
 
 @app.get("/workers/")
-def workerByQuery(position: str):
+def workerByQuery(position: str = Query(min_length=3, max_length=30)):
     filtered_workers = []
     for worker in workers_list["data"]:
         if worker["position"] == position:
             filtered_workers.append(worker)
-    return filtered_workers
+    return JSONResponse(content=filtered_workers)
 
 @app.post("/workers")
 def createWorker(workerSchema: WorkerSchema):
     workers_list["data"].append(workerSchema)
-    return workers_list
+    return JSONResponse(content=workers_list)
 
 @app.put("/workers/{id}")
 def updateWorker(id: int, workerSchema: WorkerSchema):
@@ -84,15 +92,15 @@ def updateWorker(id: int, workerSchema: WorkerSchema):
             worker["name"] = workerSchema.name
             worker["position"] = workerSchema.position
             worker["status"] = workerSchema.status
-            return worker
+            return JSONResponse(content=worker)
 
 @app.delete("/workers/{id}")
 def deleteWorker(id: int):
     for worker in workers_list["data"]:
         if worker["id"] == id:
             workers_list["data"].remove(worker)
-            return workers_list
-    return {"status": "error", "message": "Worker not found"}
+            return JSONResponse(content=workers_list)
+    return JSONResponse(content={"status": "error", "message": "Worker not found"})
   
 
 
